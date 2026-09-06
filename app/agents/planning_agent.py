@@ -19,6 +19,7 @@ def run_planning_agent(spec: SpecOutput) -> PlanOutput:
         "models.py",
         "schemas.py",
         "services.py",
+        "frontend.html",
         "requirements.txt",
         "README.md",
         "tests/test_api.py",

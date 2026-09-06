@@ -28,6 +28,7 @@ def render_project(spec: SpecOutput) -> list[GeneratedFile]:
         GeneratedFile(path="schemas.py", content=_env.get_template("schemas.py.j2").render(**context)),
         GeneratedFile(path="services.py", content=_env.get_template("services.py.j2").render(**context)),
         GeneratedFile(path="main.py", content=_env.get_template("main.py.j2").render(**context)),
+        GeneratedFile(path="frontend.html", content=_env.get_template("frontend.html.j2").render(**context)),
         GeneratedFile(path="requirements.txt", content=_env.get_template("requirements.txt.j2").render(**context)),
         GeneratedFile(path="README.md", content=_env.get_template("README.md.j2").render(**context)),
     ]

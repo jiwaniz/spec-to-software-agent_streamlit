@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>{{ app_name }}</title>
+<style>
+  body { font-family: sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+  h1 { color: #333; }
+  section { margin-bottom: 2.5rem; border: 1px solid #ddd; border-radius: 8px; padding: 1rem; }
+  table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #eee; font-size: 14px; }
+  th { background: #f5f5f5; }
+  form { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 0.75rem; align-items: end; }
+  form label { display: flex; flex-direction: column; font-size: 12px; color: #555; }
+  input { padding: 4px 6px; }
+  button { padding: 6px 12px; cursor: pointer; }
+  .delete-btn { background: #e74c3c; color: white; border: none; border-radius: 4px; }
+</style>
+</head>
+<body>
+<h1>{{ app_name }}</h1>
+<p><a href="/docs" target="_blank">API docs (Swagger)</a></p>
+
+{% for entity in entities %}
+{% if entity.has_list %}
+<section>
+  <h2>{{ entity.class_name }}</h2>
+  <table>
+    <thead><tr>
+      <th>id</th>
+      {% for field in entity.fields %}<th>{{ field.name }}</th>{% endfor %}
+      {% if entity.has_delete %}<th>Actions</th>{% endif %}
+    </tr></thead>
+    <tbody id="{{ entity.table_name }}-body"></tbody>
+  </table>
+
+  {% if entity.has_create %}
+  <form id="{{ entity.table_name }}-form">
+    {% for field in entity.fields %}
+    <label>{{ field.name }}
+      <input name="{{ field.name }}" type="{% if field.py_type in ['int','float'] %}number{% elif field.py_type == 'bool' %}checkbox{% elif field.py_type == 'datetime' %}datetime-local{% else %}text{% endif %}" {% if field.py_type == 'float' %}step="any"{% endif %}>
+    </label>
+    {% endfor %}
+    <button type="submit">Add {{ entity.class_name }}</button>
+  </form>
+  {% endif %}
+</section>
+{% endif %}
+{% endfor %}
+
+<script>
+{% for entity in entities %}
+{% if entity.has_list %}
+async function load_{{ entity.var_name }}() {
+  const res = await fetch("/{{ entity.table_name }}");
+  const rows = await res.json();
+  const body = document.getElementById("{{ entity.table_name }}-body");
+  body.innerHTML = "";
+  rows.forEach(row => {
+    const tr = document.createElement("tr");
+    let cells = "<td>" + row.id + "</td>";
+    {% for field in entity.fields %}
+    cells += "<td>" + (row["{{ field.name }}"] ?? "") + "</td>";
+    {% endfor %}
+    {% if entity.has_delete %}
+    cells += '<td><button class="delete-btn" onclick="delete_{{ entity.var_name }}(' + row.id + ')">Delete</button></td>';
+    {% endif %}
+    tr.innerHTML = cells;
+    body.appendChild(tr);
+  });
+}
+
+{% if entity.has_create %}
+document.getElementById("{{ entity.table_name }}-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const payload = {};
+  {% for field in entity.fields %}
+  {% if field.py_type == 'bool' %}
+  payload["{{ field.name }}"] = form["{{ field.name }}"].checked;
+  {% elif field.py_type in ['int', 'float'] %}
+  payload["{{ field.name }}"] = form["{{ field.name }}"].value === "" ? null : Number(form["{{ field.name }}"].value);
+  {% else %}
+  payload["{{ field.name }}"] = form["{{ field.name }}"].value;
+  {% endif %}
+  {% endfor %}
+  const res = await fetch("/{{ entity.table_name }}", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(payload),
+  });
+  if (res.ok) { form.reset(); load_{{ entity.var_name }}(); }
+  else { alert("Error: " + await res.text()); }
+});
+{% endif %}
+
+{% if entity.has_delete %}
+async function delete_{{ entity.var_name }}(id) {
+  await fetch("/{{ entity.table_name }}/" + id, { method: "DELETE" });
+  load_{{ entity.var_name }}();
+}
+{% endif %}
+
+load_{{ entity.var_name }}();
+{% endif %}
+{% endfor %}
+</script>
+</body>
+</html>

@@ -28,7 +28,7 @@ STUB_MARKER = "Not implemented yet -- Day 4 Coding Agent fills this in"
 
 EXPECTED_FILES = [
     "main.py", "database.py", "models.py", "schemas.py",
-    "services.py", "requirements.txt", "README.md", "tests/test_api.py",
+    "services.py", "frontend.html", "requirements.txt", "README.md", "tests/test_api.py",
 ]
 
 
