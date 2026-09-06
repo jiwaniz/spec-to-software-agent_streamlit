@@ -11,5 +11,6 @@ pyjwt
 pytest
 python-dotenv
 sentence-transformers
+torchvision
 uvicorn
 streamlit
