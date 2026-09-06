@@ -40,6 +40,22 @@ def build_entity_fk_map(entities: list[EntityDef]) -> dict[str, str]:
     return {e.name.lower(): e.name for e in entities}
 
 
+_PRICE_KEYWORDS = ("price", "cost", "value", "amount")
+_QUANTITY_KEYWORDS = ("quantity", "stock", "count", "qty")
+_THRESHOLD_KEYWORDS = ("threshold", "reorder", "minimum", "min_stock")
+
+
+def _field_role(field_name: str) -> str | None:
+    lower = field_name.lower()
+    if any(k in lower for k in _THRESHOLD_KEYWORDS):
+        return "threshold"
+    if any(k in lower for k in _QUANTITY_KEYWORDS):
+        return "quantity"
+    if any(k in lower for k in _PRICE_KEYWORDS):
+        return "price"
+    return None
+
+
 def build_entity_context(spec: SpecOutput) -> list[dict]:
     entity_by_lower = build_entity_fk_map(spec.entities)
     table_by_class = {e.name: e.table_name for e in spec.entities}
@@ -73,6 +89,7 @@ def build_entity_context(spec: SpecOutput) -> list[dict]:
                 "is_fk": is_fk,
                 "fk_target_table": fk_target_table,
                 "fk_target_class": fk_target_class,
+                "role": _field_role(field.name) if field.type in ("int", "float") and not is_fk else None,
             }
             fields_ctx.append(field_ctx)
             if is_fk:
@@ -85,6 +102,9 @@ def build_entity_context(spec: SpecOutput) -> list[dict]:
             "fields": fields_ctx,
             "fk_fields": fk_fields_ctx,
             "has_fields": len(fields_ctx) > 0,
+            "price_field": next((f["name"] for f in fields_ctx if f["role"] == "price"), None),
+            "quantity_field": next((f["name"] for f in fields_ctx if f["role"] == "quantity"), None),
+            "threshold_field": next((f["name"] for f in fields_ctx if f["role"] == "threshold"), None),
             # standard CRUD paths, precomputed as plain strings to avoid
             # Jinja2 vs FastAPI curly-brace collisions in the templates
             "create_path": f"/{entity.table_name}",

@@ -35,7 +35,10 @@ Rules:
 - If auth_enabled is true, mark write endpoints (POST/PUT/DELETE) as "protected": true,
   and add a functional requirement covering that protected endpoints reject
   unauthenticated requests.
-- Keep it small: 1-3 entities, 4-8 endpoints, matching the scale of the example.
+- Keep it reasonably scoped: up to 4 entities, up to 12 endpoints. A
+  transaction/history-log entity (e.g. tracking stock movements, changes,
+  or events over time, linked via FK to the main entity) is encouraged
+  when the description implies tracking activity over time.
 - validation_rules should be short plain-English business rules (e.g.
   "stock_quantity must be >= 0"), not code.
 - non_functional_requirements MUST stay within this project's actual stack
