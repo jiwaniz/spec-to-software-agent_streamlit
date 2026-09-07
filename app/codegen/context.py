@@ -200,6 +200,23 @@ def build_template_context(spec: SpecOutput) -> dict:
         for ep in spec.endpoints
     ]
 
+    label_field_by_class = {}
+    for e in spec.entities:
+        first_str = next((f.name for f in e.fields if f.type == "str"), "id")
+        label_field_by_class[e.name] = first_str
+
+    for entity_ctx in entities_ctx:
+        entity_ctx["date_field"] = next((f["name"] for f in entity_ctx["fields"] if f["py_type"] == "datetime"), None)
+        entity_ctx["fk_breakdowns"] = [
+            {
+                "field_name": fk["name"],
+                "target_class": fk["fk_target_class"],
+                "target_var": fk["fk_target_class"].lower(),
+                "label_field": label_field_by_class.get(fk["fk_target_class"], "id"),
+            }
+            for fk in entity_ctx["fk_fields"]
+        ]
+
     return {
         "app_name": spec.app_name,
         "domain": spec.domain,
