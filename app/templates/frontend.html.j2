@@ -4,54 +4,69 @@
 <meta charset="utf-8">
 <title>{{ app_name }}</title>
 <style>
-  body { font-family: sans-serif; max-width: 1000px; margin: 2rem auto; padding: 0 1rem; color: #222; }
-  h1 { color: #333; }
-  section { margin-bottom: 2.5rem; border: 1px solid #ddd; border-radius: 8px; padding: 1rem; }
+  :root { --accent1:#6C5CE7; --accent2:#00B894; --accent3:#FD79A8; --accent4:#0984E3; --bg:#F7F7FC; }
+  body { font-family: 'Segoe UI', sans-serif; max-width: 1050px; margin: 0 auto; padding: 0 1rem 2rem; background: var(--bg); color: #2d2d3a; }
+  .header { background: linear-gradient(135deg, var(--accent1), var(--accent4)); color: white; padding: 1.5rem 2rem; margin: 0 -1rem 1.5rem; border-radius: 0 0 16px 16px; }
+  .header h1 { margin: 0 0 4px; }
+  .header a { color: #e8e8ff; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 1.5rem; }
+  .tab-btn { padding: 10px 20px; border: none; border-radius: 8px 8px 0 0; background: #e2e2ee; cursor: pointer; font-weight: 600; color: #555; }
+  .tab-btn.active { background: white; color: var(--accent1); box-shadow: 0 -2px 6px rgba(0,0,0,0.05); }
+  .view { display: none; }
+  .view.active { display: block; }
+  section { margin-bottom: 2rem; background: white; border-radius: 12px; padding: 1.2rem; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  section h2 { margin-top: 0; color: var(--accent1); }
   table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
-  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #eee; font-size: 14px; }
-  th { background: #f5f5f5; cursor: pointer; user-select: none; }
-  th:hover { background: #eaeaea; }
-  tr.low-stock { background: #fff0f0; }
-  form { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 0.75rem; align-items: end; }
-  form label { display: flex; flex-direction: column; font-size: 12px; color: #555; }
-  input { padding: 4px 6px; }
-  button { padding: 6px 12px; cursor: pointer; }
-  .delete-btn { background: #e74c3c; color: white; border: none; border-radius: 4px; }
-  .toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 6px; }
-  .stat-cards { display: flex; gap: 12px; flex-wrap: wrap; }
-  .stat-card { background: #f7f7fb; border: 1px solid #e0e0ea; border-radius: 8px; padding: 10px 16px; min-width: 140px; }
-  .stat-card .num { font-size: 22px; font-weight: bold; }
-  .stat-card .label { font-size: 12px; color: #666; }
-  .bar-row { display: flex; align-items: center; gap: 8px; margin: 4px 0; font-size: 13px; }
-  .bar-track { background: #eee; border-radius: 4px; flex: 1; height: 14px; overflow: hidden; }
-  .bar-fill { background: #4a7dfc; height: 100%; }
+  th, td { text-align: left; padding: 8px; border-bottom: 1px solid #eee; font-size: 14px; }
+  th { background: #f0f0fa; cursor: pointer; color: #555; }
+  th:hover { background: #e6e6f5; }
+  tr.low-stock { background: #ffecec; }
+  form { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 0.75rem; align-items: end; }
+  form label { display: flex; flex-direction: column; font-size: 12px; color: #666; }
+  input { padding: 6px 8px; border: 1px solid #ddd; border-radius: 6px; }
+  button { padding: 8px 16px; cursor: pointer; border: none; border-radius: 6px; background: var(--accent1); color: white; font-weight: 600; }
+  button:hover { opacity: 0.9; }
+  .delete-btn { background: var(--accent3); }
+  .toolbar { display: flex; gap: 12px; align-items: center; margin-bottom: 6px; }
+  .toolbar input { flex: 1; }
+  .stat-cards { display: flex; gap: 14px; flex-wrap: wrap; }
+  .stat-card { color: white; border-radius: 10px; padding: 14px 20px; min-width: 150px; }
+  .stat-card:nth-child(4n+1) { background: linear-gradient(135deg, var(--accent1), #a29bfe); }
+  .stat-card:nth-child(4n+2) { background: linear-gradient(135deg, var(--accent2), #55efc4); }
+  .stat-card:nth-child(4n+3) { background: linear-gradient(135deg, var(--accent3), #fab1c9); }
+  .stat-card:nth-child(4n+4) { background: linear-gradient(135deg, var(--accent4), #74b9ff); }
+  .stat-card .num { font-size: 26px; font-weight: bold; }
+  .stat-card .label { font-size: 12px; opacity: 0.9; }
+  .bar-row { display: flex; align-items: center; gap: 8px; margin: 5px 0; font-size: 13px; }
+  .bar-track { background: #eee; border-radius: 4px; flex: 1; height: 16px; overflow: hidden; }
+  .bar-fill { background: linear-gradient(90deg, var(--accent1), var(--accent4)); height: 100%; }
   .bar-label { width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 </style>
 </head>
 <body>
-<h1>{{ app_name }}</h1>
-<p><a href="/docs" target="_blank">API docs (Swagger)</a></p>
+<div class="header">
+  <h1>{{ app_name }}</h1>
+  <a href="/docs" target="_blank">API docs (Swagger)</a>
+</div>
 
+<div class="tabs">
+  <button class="tab-btn active" onclick="showTab('entry', this)">Data Entry</button>
+  <button class="tab-btn" onclick="showTab('reports', this)">Reports</button>
+</div>
+
+<div id="view-entry" class="view active">
 {% for entity in entities %}
 {% if entity.has_list %}
 <section>
   <h2>{{ entity.class_name }}</h2>
-
-  <div class="stat-cards" id="{{ entity.table_name }}-stats"></div>
-
-  {% if entity.quantity_field %}
-  <div id="{{ entity.table_name }}-chart" style="margin-top:12px;"></div>
-  {% endif %}
-
-  <div class="toolbar" style="margin-top:12px;">
-    <input type="text" id="{{ entity.table_name }}-search" placeholder="Search...">
+  <div class="toolbar">
+    <input type="text" id="{{ entity.table_name }}-search" placeholder="Search {{ entity.class_name }}...">
     {% if entity.quantity_field and entity.threshold_field %}
     <label style="flex-direction:row; gap:4px; align-items:center;">
       <input type="checkbox" id="{{ entity.table_name }}-lowstock-only"> Low stock only
     </label>
     {% endif %}
   </div>
-
   <table>
     <thead><tr>
       <th onclick="sortBy_{{ entity.var_name }}('id')">id</th>
@@ -60,7 +75,6 @@
     </tr></thead>
     <tbody id="{{ entity.table_name }}-body"></tbody>
   </table>
-
   {% if entity.has_create %}
   <form id="{{ entity.table_name }}-form">
     {% for field in entity.fields %}
@@ -74,8 +88,30 @@
 </section>
 {% endif %}
 {% endfor %}
+</div>
+
+<div id="view-reports" class="view">
+{% for entity in entities %}
+{% if entity.has_list %}
+<section>
+  <h2>{{ entity.class_name }} Report</h2>
+  <div class="stat-cards" id="{{ entity.table_name }}-stats"></div>
+  {% if entity.quantity_field %}
+  <div id="{{ entity.table_name }}-chart" style="margin-top:14px;"></div>
+  {% endif %}
+</section>
+{% endif %}
+{% endfor %}
+</div>
 
 <script>
+function showTab(name, btn) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
 {% for entity in entities %}
 {% if entity.has_list %}
 let _{{ entity.var_name }}_data = [];
@@ -96,28 +132,15 @@ function sortBy_{{ entity.var_name }}(field) {
 
 function render_{{ entity.var_name }}() {
   let rows = [..._{{ entity.var_name }}_data];
-
   const search = document.getElementById("{{ entity.table_name }}-search").value.toLowerCase();
-  if (search) {
-    rows = rows.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(search)));
-  }
-
+  if (search) rows = rows.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(search)));
   {% if entity.quantity_field and entity.threshold_field %}
-  const lowOnly = document.getElementById("{{ entity.table_name }}-lowstock-only").checked;
-  if (lowOnly) {
+  if (document.getElementById("{{ entity.table_name }}-lowstock-only").checked) {
     rows = rows.filter(r => r["{{ entity.quantity_field }}"] < r["{{ entity.threshold_field }}"]);
   }
   {% endif %}
-
   const s = _{{ entity.var_name }}_sort;
-  if (s.field) {
-    rows.sort((a, b) => {
-      const av = a[s.field], bv = b[s.field];
-      if (av === bv) return 0;
-      const cmp = av > bv ? 1 : -1;
-      return s.asc ? cmp : -cmp;
-    });
-  }
+  if (s.field) rows.sort((a,b) => { const av=a[s.field], bv=b[s.field]; if(av===bv) return 0; const c=av>bv?1:-1; return s.asc?c:-c; });
 
   const body = document.getElementById("{{ entity.table_name }}-body");
   body.innerHTML = "";
@@ -127,16 +150,11 @@ function render_{{ entity.var_name }}() {
     if (row["{{ entity.quantity_field }}"] < row["{{ entity.threshold_field }}"]) tr.className = "low-stock";
     {% endif %}
     let cells = "<td>" + row.id + "</td>";
-    {% for field in entity.fields %}
-    cells += "<td>" + (row["{{ field.name }}"] ?? "") + "</td>";
-    {% endfor %}
-    {% if entity.has_delete %}
-    cells += '<td><button class="delete-btn" onclick="delete_{{ entity.var_name }}(' + row.id + ')">Delete</button></td>';
-    {% endif %}
+    {% for field in entity.fields %}cells += "<td>" + (row["{{ field.name }}"] ?? "") + "</td>";{% endfor %}
+    {% if entity.has_delete %}cells += '<td><button class="delete-btn" onclick="delete_{{ entity.var_name }}(' + row.id + ')">Delete</button></td>';{% endif %}
     tr.innerHTML = cells;
     body.appendChild(tr);
   });
-
   renderStats_{{ entity.var_name }}(_{{ entity.var_name }}_data);
 }
 
@@ -144,7 +162,7 @@ function renderStats_{{ entity.var_name }}(all) {
   const stats = document.getElementById("{{ entity.table_name }}-stats");
   let cards = '<div class="stat-card"><div class="num">' + all.length + '</div><div class="label">Total {{ entity.class_name }}</div></div>';
   {% if entity.price_field and entity.quantity_field %}
-  const totalValue = all.reduce((sum, r) => sum + (r["{{ entity.price_field }}"] || 0) * (r["{{ entity.quantity_field }}"] || 0), 0);
+  const totalValue = all.reduce((s,r) => s + (r["{{ entity.price_field }}"]||0) * (r["{{ entity.quantity_field }}"]||0), 0);
   cards += '<div class="stat-card"><div class="num">' + totalValue.toFixed(2) + '</div><div class="label">Total Value</div></div>';
   {% endif %}
   {% if entity.quantity_field and entity.threshold_field %}
@@ -152,16 +170,13 @@ function renderStats_{{ entity.var_name }}(all) {
   cards += '<div class="stat-card"><div class="num">' + lowCount + '</div><div class="label">Low Stock Items</div></div>';
   {% endif %}
   stats.innerHTML = cards;
-
   {% if entity.quantity_field %}
   const chartEl = document.getElementById("{{ entity.table_name }}-chart");
-  const top = [...all].sort((a,b) => (b["{{ entity.quantity_field }}"]||0) - (a["{{ entity.quantity_field }}"]||0)).slice(0, 8);
-  const maxVal = Math.max(1, ...top.map(r => r["{{ entity.quantity_field }}"] || 0));
+  const top = [...all].sort((a,b) => (b["{{ entity.quantity_field }}"]||0)-(a["{{ entity.quantity_field }}"]||0)).slice(0,8);
+  const maxVal = Math.max(1, ...top.map(r => r["{{ entity.quantity_field }}"]||0));
   chartEl.innerHTML = top.map(r => {
-    const val = r["{{ entity.quantity_field }}"] || 0;
-    const pct = Math.round((val / maxVal) * 100);
-    const label = r.name || r.id;
-    return '<div class="bar-row"><div class="bar-label">' + label + '</div><div class="bar-track"><div class="bar-fill" style="width:' + pct + '%"></div></div><div>' + val + '</div></div>';
+    const val = r["{{ entity.quantity_field }}"]||0, pct = Math.round((val/maxVal)*100), label = r.name || r.id;
+    return '<div class="bar-row"><div class="bar-label">'+label+'</div><div class="bar-track"><div class="bar-fill" style="width:'+pct+'%"></div></div><div>'+val+'</div></div>';
   }).join("");
   {% endif %}
 }
@@ -174,24 +189,14 @@ document.getElementById("{{ entity.table_name }}-lowstock-only").addEventListene
 {% if entity.has_create %}
 document.getElementById("{{ entity.table_name }}-form").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const form = e.target;
-  const payload = {};
+  const form = e.target, payload = {};
   {% for field in entity.fields %}
-  {% if field.py_type == 'bool' %}
-  payload["{{ field.name }}"] = form["{{ field.name }}"].checked;
-  {% elif field.py_type in ['int', 'float'] %}
-  payload["{{ field.name }}"] = form["{{ field.name }}"].value === "" ? null : Number(form["{{ field.name }}"].value);
-  {% else %}
-  payload["{{ field.name }}"] = form["{{ field.name }}"].value;
-  {% endif %}
+  {% if field.py_type == 'bool' %}payload["{{ field.name }}"] = form["{{ field.name }}"].checked;
+  {% elif field.py_type in ['int','float'] %}payload["{{ field.name }}"] = form["{{ field.name }}"].value === "" ? null : Number(form["{{ field.name }}"].value);
+  {% else %}payload["{{ field.name }}"] = form["{{ field.name }}"].value;{% endif %}
   {% endfor %}
-  const res = await fetch("/{{ entity.table_name }}", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify(payload),
-  });
-  if (res.ok) { form.reset(); load_{{ entity.var_name }}(); }
-  else { alert("Error: " + await res.text()); }
+  const res = await fetch("/{{ entity.table_name }}", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload) });
+  if (res.ok) { form.reset(); load_{{ entity.var_name }}(); } else { alert("Error: " + await res.text()); }
 });
 {% endif %}
 
