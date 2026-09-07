@@ -71,7 +71,31 @@ if __name__ == "__main__":
 '''
 
 
-def package_zip(main_files: list[GeneratedFile], test_file: GeneratedFile, report_md: str, spec_json: str) -> bytes:
+def build_test_checklist(spec: SpecOutput) -> str:
+    lines = ["# How to Test This App", "", "Run `run_locally.py` (or double-click `start.bat` on Windows) first, then:", ""]
+    n = 1
+    for entity in spec.entities:
+        table = entity.table_name
+        if any(ep.entity == entity.name and ep.method == "POST" for ep in spec.endpoints):
+            lines.append(f"{n}. Go to the **Data Entry** tab, fill in the **{entity.name}** form, click 'Add {entity.name}' -> A new row should appear in the {entity.name} table.")
+            n += 1
+        if any(ep.entity == entity.name and ep.method == "GET" and ep.path == f"/{table}" for ep in spec.endpoints):
+            lines.append(f"{n}. Look at the **{entity.name}** table -> It should list all {entity.name} records you've added.")
+            n += 1
+        if any(ep.entity == entity.name and ep.method == "DELETE" for ep in spec.endpoints):
+            lines.append(f"{n}. Click 'Delete' next to any {entity.name} row -> That row should disappear from the table.")
+            n += 1
+    for ep in spec.endpoints:
+        if ep.method == "GET" and "{" not in ep.path and not any(ep.path == f"/{e.table_name}" for e in spec.entities):
+            lines.append(f"{n}. Check the **Reports** tab -> {ep.description}")
+            n += 1
+    return "\n".join(lines)
+
+
+_START_BAT = "@echo off\r\npython run_locally.py\r\npause\r\n"
+
+
+def package_zip(main_files: list[GeneratedFile], test_file: GeneratedFile, report_md: str, spec_json: str, checklist_md: str = "") -> bytes:
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
         for f in main_files:
@@ -80,12 +104,16 @@ def package_zip(main_files: list[GeneratedFile], test_file: GeneratedFile, repor
         zf.writestr("validation_report.md", report_md)
         zf.writestr("spec.json", spec_json)
         zf.writestr("run_locally.py", _RUN_LOCALLY_SCRIPT)
+        zf.writestr("start.bat", _START_BAT)
+        if checklist_md:
+            zf.writestr("TEST_CHECKLIST.md", checklist_md)
     return buf.getvalue()
 
 
 def run_report_agent(
     spec: SpecOutput, main_files: list[GeneratedFile], test_file: GeneratedFile, report: ValidationReport
-) -> tuple[str, bytes]:
+) -> tuple[str, bytes, str]:
     report_md = build_validation_report_md(spec, report)
-    zip_bytes = package_zip(main_files, test_file, report_md, spec.model_dump_json(indent=2))
-    return report_md, zip_bytes
+    checklist_md = build_test_checklist(spec)
+    zip_bytes = package_zip(main_files, test_file, report_md, spec.model_dump_json(indent=2), checklist_md)
+    return report_md, zip_bytes, checklist_md

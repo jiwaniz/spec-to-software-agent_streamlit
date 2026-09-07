@@ -34,6 +34,7 @@ class PipelineState(TypedDict, total=False):
     test_failure_details: dict # {test_name: failure_text} for the correction loop
     report_md: str
     zip_bytes: bytes
+    checklist_md: str
     diagram: str               # Mermaid syntax
     correction_cycle: int
 
@@ -221,17 +222,19 @@ def report_node(state: PipelineState) -> PipelineState:
     if not state.get("spec") or not state.get("generated_files"):
         state["report_md"] = ""
         state["zip_bytes"] = b""
+        state["checklist_md"] = ""
         return state
     from app.schemas import SpecOutput, GeneratedFile, ValidationReport
     from app.agents.report_agent import run_report_agent
-    print("[Report Agent] building report + ZIP...")
+    print("[Report Agent] building report + ZIP + test checklist...")
     spec = SpecOutput.model_validate(state["spec"])
     main_files = [GeneratedFile.model_validate(f) for f in state["generated_files"]]
     test_file = GeneratedFile.model_validate(state["test_file"])
     report = ValidationReport.model_validate(state["validation"])
-    report_md, zip_bytes = run_report_agent(spec, main_files, test_file, report)
+    report_md, zip_bytes, checklist_md = run_report_agent(spec, main_files, test_file, report)
     state["report_md"] = report_md
     state["zip_bytes"] = zip_bytes
+    state["checklist_md"] = checklist_md
     return state
 
 

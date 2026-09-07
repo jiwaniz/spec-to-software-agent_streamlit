@@ -89,11 +89,15 @@ if result is not None:
             main_files, test_file,
             result.get("report_md", ""),
             json.dumps(result["spec"], indent=2),
+            result.get("checklist_md", ""),
         )
         st.download_button(
             "Download project ZIP", zip_bytes,
             file_name=f"{result['spec']['app_name']}.zip",
         )
+
+        with st.expander("✅ How to test this app"):
+            st.markdown(result.get("checklist_md", "Run `start.bat` (Windows) or `python run_locally.py`, then explore the tabs."))
 
         st.markdown("## Refine")
         for msg, reply in st.session_state.chat_history:
