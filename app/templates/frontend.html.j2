@@ -50,22 +50,20 @@
 </div>
 
 <div class="tabs">
-  <button class="tab-btn active" onclick="showTab('entry', this)">Data Entry</button>
-  <button class="tab-btn" onclick="showTab('reports', this)">Reports</button>
+{% for tab in ui_plan %}
+  <button class="tab-btn{% if loop.first %} active{% endif %}" onclick="showTab('{{ tab.id }}', this)">{{ tab.label }}</button>
+{% endfor %}
 </div>
 
-<div id="view-entry" class="view active">
-{% for entity in entities %}
-{% if entity.has_list %}
+{% for tab in ui_plan %}
+<div id="view-{{ tab.id }}" class="view{% if loop.first %} active{% endif %}">
+
+{% if tab.type == 'entry' %}
+{% for entity in tab.entities %}
 <section>
   <h2>{{ entity.class_name }}</h2>
   <div class="toolbar">
     <input type="text" id="{{ entity.table_name }}-search" placeholder="Search {{ entity.class_name }}...">
-    {% if entity.quantity_field and entity.threshold_field %}
-    <label style="flex-direction:row; gap:4px; align-items:center;">
-      <input type="checkbox" id="{{ entity.table_name }}-lowstock-only"> Low stock only
-    </label>
-    {% endif %}
   </div>
   <table>
     <thead><tr>
@@ -86,13 +84,10 @@
   </form>
   {% endif %}
 </section>
-{% endif %}
 {% endfor %}
-</div>
 
-<div id="view-reports" class="view">
-{% for entity in entities %}
-{% if entity.has_list %}
+{% elif tab.type == 'reports' %}
+{% for entity in tab.entities %}
 <section>
   <h2>{{ entity.class_name }} Report</h2>
   <div class="stat-cards" id="{{ entity.table_name }}-stats"></div>
@@ -112,9 +107,29 @@
   {% endfor %}
   {% endif %}
 </section>
-{% endif %}
 {% endfor %}
+
+{% elif tab.type == 'alerts' %}
+{% for entity in tab.entities %}
+<section>
+  <h2>{{ entity.class_name }} -- Low Stock</h2>
+  <table>
+    <thead><tr><th>id</th>{% for field in entity.fields %}<th>{{ field.name }}</th>{% endfor %}</tr></thead>
+    <tbody id="{{ entity.table_name }}-alerts-body"></tbody>
+  </table>
+</section>
+{% endfor %}
+
+{% elif tab.type == 'settings' %}
+<section>
+  <h2>Authentication</h2>
+  <p>Demo login (change before real use): <code>POST /token</code> with <code>username=admin&password=admin</code></p>
+  <p>Use the returned token as <code>Authorization: Bearer &lt;token&gt;</code> on protected requests.</p>
+</section>
+{% endif %}
+
 </div>
+{% endfor %}
 
 <script>
 function showTab(name, btn) {
@@ -143,30 +158,43 @@ function sortBy_{{ entity.var_name }}(field) {
 
 function render_{{ entity.var_name }}() {
   let rows = [..._{{ entity.var_name }}_data];
-  const search = document.getElementById("{{ entity.table_name }}-search").value.toLowerCase();
+  const searchEl = document.getElementById("{{ entity.table_name }}-search");
+  const search = searchEl ? searchEl.value.toLowerCase() : "";
   if (search) rows = rows.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(search)));
-  {% if entity.quantity_field and entity.threshold_field %}
-  if (document.getElementById("{{ entity.table_name }}-lowstock-only").checked) {
-    rows = rows.filter(r => r["{{ entity.quantity_field }}"] < r["{{ entity.threshold_field }}"]);
-  }
-  {% endif %}
   const s = _{{ entity.var_name }}_sort;
   if (s.field) rows.sort((a,b) => { const av=a[s.field], bv=b[s.field]; if(av===bv) return 0; const c=av>bv?1:-1; return s.asc?c:-c; });
 
   const body = document.getElementById("{{ entity.table_name }}-body");
-  body.innerHTML = "";
-  rows.forEach(row => {
-    const tr = document.createElement("tr");
-    {% if entity.quantity_field and entity.threshold_field %}
-    if (row["{{ entity.quantity_field }}"] < row["{{ entity.threshold_field }}"]) tr.className = "low-stock";
-    {% endif %}
-    let cells = "<td>" + row.id + "</td>";
-    {% for field in entity.fields %}cells += "<td>" + (row["{{ field.name }}"] ?? "") + "</td>";{% endfor %}
-    {% if entity.has_delete %}cells += '<td><button class="delete-btn" onclick="delete_{{ entity.var_name }}(' + row.id + ')">Delete</button></td>';{% endif %}
-    tr.innerHTML = cells;
-    body.appendChild(tr);
-  });
-  renderStats_{{ entity.var_name }}(_{{ entity.var_name }}_data);
+  if (body) {
+    body.innerHTML = "";
+    rows.forEach(row => {
+      const tr = document.createElement("tr");
+      {% if entity.quantity_field and entity.threshold_field %}
+      if (row["{{ entity.quantity_field }}"] < row["{{ entity.threshold_field }}"]) tr.className = "low-stock";
+      {% endif %}
+      let cells = "<td>" + row.id + "</td>";
+      {% for field in entity.fields %}cells += "<td>" + (row["{{ field.name }}"] ?? "") + "</td>";{% endfor %}
+      {% if entity.has_delete %}cells += '<td><button class="delete-btn" onclick="delete_{{ entity.var_name }}(' + row.id + ')">Delete</button></td>';{% endif %}
+      tr.innerHTML = cells;
+      body.appendChild(tr);
+    });
+  }
+
+  {% if entity.quantity_field and entity.threshold_field %}
+  const alertsBody = document.getElementById("{{ entity.table_name }}-alerts-body");
+  if (alertsBody) {
+    alertsBody.innerHTML = "";
+    _{{ entity.var_name }}_data.filter(r => r["{{ entity.quantity_field }}"] < r["{{ entity.threshold_field }}"]).forEach(row => {
+      const tr = document.createElement("tr");
+      let cells = "<td>" + row.id + "</td>";
+      {% for field in entity.fields %}cells += "<td>" + (row["{{ field.name }}"] ?? "") + "</td>";{% endfor %}
+      tr.innerHTML = cells;
+      alertsBody.appendChild(tr);
+    });
+  }
+  {% endif %}
+
+  if (document.getElementById("{{ entity.table_name }}-stats")) renderStats_{{ entity.var_name }}(_{{ entity.var_name }}_data);
 }
 
 function renderStats_{{ entity.var_name }}(all) {
@@ -200,11 +228,9 @@ function renderStats_{{ entity.var_name }}(all) {
     byYear[year] = (byYear[year]||0) + (r["{{ entity.price_field }}"]||0);
   });
   document.getElementById("{{ entity.table_name }}-monthly-title").textContent = "By Month";
-  renderBarChart_{{ entity.var_name }}(document.getElementById("{{ entity.table_name }}-monthly-chart"),
-    Object.entries(byMonth).sort().map(([k,v]) => [k, v]));
+  renderBarChart_{{ entity.var_name }}(document.getElementById("{{ entity.table_name }}-monthly-chart"), Object.entries(byMonth).sort());
   document.getElementById("{{ entity.table_name }}-yearly-title").textContent = "By Year";
-  renderBarChart_{{ entity.var_name }}(document.getElementById("{{ entity.table_name }}-yearly-chart"),
-    Object.entries(byYear).sort().map(([k,v]) => [k, v]));
+  renderBarChart_{{ entity.var_name }}(document.getElementById("{{ entity.table_name }}-yearly-chart"), Object.entries(byYear).sort());
   {% endif %}
 
   {% if entity.price_field %}
@@ -217,8 +243,7 @@ function renderStats_{{ entity.var_name }}(all) {
       byLabel[label] = (byLabel[label]||0) + (r["{{ entity.price_field }}"]||0);
     });
     document.getElementById("{{ entity.table_name }}-by-{{ fk.target_var }}-title").textContent = "By {{ fk.target_class }}";
-    renderBarChart_{{ entity.var_name }}(document.getElementById("{{ entity.table_name }}-by-{{ fk.target_var }}-chart"),
-      Object.entries(byLabel).sort((a,b) => b[1]-a[1]));
+    renderBarChart_{{ entity.var_name }}(document.getElementById("{{ entity.table_name }}-by-{{ fk.target_var }}-chart"), Object.entries(byLabel).sort((a,b) => b[1]-a[1]));
   }
   {% endfor %}
   {% endif %}
@@ -233,10 +258,8 @@ function renderBarChart_{{ entity.var_name }}(el, pairs) {
   }).join("");
 }
 
-document.getElementById("{{ entity.table_name }}-search").addEventListener("input", render_{{ entity.var_name }});
-{% if entity.quantity_field and entity.threshold_field %}
-document.getElementById("{{ entity.table_name }}-lowstock-only").addEventListener("change", render_{{ entity.var_name }});
-{% endif %}
+const _{{ entity.var_name }}_searchEl = document.getElementById("{{ entity.table_name }}-search");
+if (_{{ entity.var_name }}_searchEl) _{{ entity.var_name }}_searchEl.addEventListener("input", render_{{ entity.var_name }});
 
 {% if entity.has_create %}
 document.getElementById("{{ entity.table_name }}-form").addEventListener("submit", async (e) => {
@@ -248,17 +271,18 @@ document.getElementById("{{ entity.table_name }}-form").addEventListener("submit
   {% else %}payload["{{ field.name }}"] = form["{{ field.name }}"].value;{% endif %}
   {% endfor %}
   const res = await fetch("/{{ entity.table_name }}", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload) });
-  if (res.ok) { form.reset(); load_{{ entity.var_name }}(); } else { alert("Error: " + await res.text()); }
+  if (res.ok) { form.reset(); await load_{{ entity.var_name }}(); render_{{ entity.var_name }}(); }
+  else { alert("Error: " + await res.text()); }
 });
 {% endif %}
 
 {% if entity.has_delete %}
 async function delete_{{ entity.var_name }}(id) {
   await fetch("/{{ entity.table_name }}/" + id, { method: "DELETE" });
-  load_{{ entity.var_name }}();
+  await load_{{ entity.var_name }}();
+  render_{{ entity.var_name }}();
 }
 {% endif %}
-
 {% endif %}
 {% endfor %}
 

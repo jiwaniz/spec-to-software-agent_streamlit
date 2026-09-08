@@ -217,6 +217,21 @@ def build_template_context(spec: SpecOutput) -> dict:
             for fk in entity_ctx["fk_fields"]
         ]
 
+    # Bounded UI plan: tab TYPE choices are fixed; only which entities land
+    # in which tab (and whether a tab appears at all) varies per app. Keeps
+    # per-app customization without LLM involvement in the frontend at all.
+    entry_entities = [e for e in entities_ctx if e["has_list"]]
+    report_entities = [e for e in entities_ctx if e["has_list"] and (e["price_field"] or e["quantity_field"])]
+    alert_entities = [e for e in entities_ctx if e["quantity_field"] and e["threshold_field"]]
+
+    ui_plan = [{"id": "entry", "label": "Data Entry", "type": "entry", "entities": entry_entities}]
+    if report_entities:
+        ui_plan.append({"id": "reports", "label": "Reports", "type": "reports", "entities": report_entities})
+    if alert_entities:
+        ui_plan.append({"id": "alerts", "label": "Alerts", "type": "alerts", "entities": alert_entities})
+    if spec.auth_enabled:
+        ui_plan.append({"id": "settings", "label": "Settings", "type": "settings", "entities": []})
+
     return {
         "app_name": spec.app_name,
         "domain": spec.domain,
@@ -225,6 +240,7 @@ def build_template_context(spec: SpecOutput) -> dict:
         "custom_endpoints": custom_endpoints,
         "needs_datetime_import": needs_datetime_import,
         "all_endpoints": all_endpoints_summary,
+        "ui_plan": ui_plan,
     }
 
 
