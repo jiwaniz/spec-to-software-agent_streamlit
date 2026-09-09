@@ -58,8 +58,8 @@ def main():
     proc = subprocess.Popen([sys.executable, "-m", "uvicorn", "main:app", "--port", "8000"])
 
     time.sleep(2)
-    webbrowser.open("http://127.0.0.1:8000/docs")
-    print("Opened http://127.0.0.1:8000/docs -- press Ctrl+C here to stop the server.")
+    webbrowser.open("http://127.0.0.1:8000")
+    print("Opened http://127.0.0.1:8000 -- press Ctrl+C here to stop the server.")
 
     try:
         proc.wait()

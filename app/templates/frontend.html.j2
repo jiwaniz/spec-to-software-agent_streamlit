@@ -94,18 +94,16 @@
   {% if entity.quantity_field %}
   <div id="{{ entity.table_name }}-chart" style="margin-top:14px;"></div>
   {% endif %}
-  {% if entity.price_field and entity.date_field %}
+  {% if entity.date_field %}
   <h3 id="{{ entity.table_name }}-monthly-title" style="margin-top:16px; font-size:14px; color:#666;"></h3>
   <div id="{{ entity.table_name }}-monthly-chart"></div>
   <h3 id="{{ entity.table_name }}-yearly-title" style="margin-top:16px; font-size:14px; color:#666;"></h3>
   <div id="{{ entity.table_name }}-yearly-chart"></div>
   {% endif %}
-  {% if entity.price_field %}
   {% for fk in entity.fk_breakdowns %}
   <h3 id="{{ entity.table_name }}-by-{{ fk.target_var }}-title" style="margin-top:16px; font-size:14px; color:#666;"></h3>
   <div id="{{ entity.table_name }}-by-{{ fk.target_var }}-chart"></div>
   {% endfor %}
-  {% endif %}
 </section>
 {% endfor %}
 
@@ -218,14 +216,19 @@ function renderStats_{{ entity.var_name }}(all) {
     [...all].sort((a,b) => (b["{{ entity.quantity_field }}"]||0)-(a["{{ entity.quantity_field }}"]||0)).slice(0,8).map(r => [r.name || r.id, r["{{ entity.quantity_field }}"]||0]));
   {% endif %}
 
-  {% if entity.price_field and entity.date_field %}
+  {% if entity.date_field %}
   const byMonth = {}, byYear = {};
   all.forEach(r => {
     const d = r["{{ entity.date_field }}"];
     if (!d) return;
     const month = String(d).slice(0,7), year = String(d).slice(0,4);
+    {% if entity.price_field %}
     byMonth[month] = (byMonth[month]||0) + (r["{{ entity.price_field }}"]||0);
     byYear[year] = (byYear[year]||0) + (r["{{ entity.price_field }}"]||0);
+    {% else %}
+    byMonth[month] = (byMonth[month]||0) + 1;
+    byYear[year] = (byYear[year]||0) + 1;
+    {% endif %}
   });
   document.getElementById("{{ entity.table_name }}-monthly-title").textContent = "By Month";
   renderBarChart_{{ entity.var_name }}(document.getElementById("{{ entity.table_name }}-monthly-chart"), Object.entries(byMonth).sort());
@@ -233,20 +236,22 @@ function renderStats_{{ entity.var_name }}(all) {
   renderBarChart_{{ entity.var_name }}(document.getElementById("{{ entity.table_name }}-yearly-chart"), Object.entries(byYear).sort());
   {% endif %}
 
-  {% if entity.price_field %}
   {% for fk in entity.fk_breakdowns %}
   {
     const byLabel = {};
     all.forEach(r => {
       const target = (_{{ fk.target_var }}_data || []).find(t => t.id === r["{{ fk.field_name }}"]);
       const label = target ? (target["{{ fk.label_field }}"] ?? ("id " + target.id)) : "Unknown";
+      {% if entity.price_field %}
       byLabel[label] = (byLabel[label]||0) + (r["{{ entity.price_field }}"]||0);
+      {% else %}
+      byLabel[label] = (byLabel[label]||0) + 1;
+      {% endif %}
     });
     document.getElementById("{{ entity.table_name }}-by-{{ fk.target_var }}-title").textContent = "By {{ fk.target_class }}";
     renderBarChart_{{ entity.var_name }}(document.getElementById("{{ entity.table_name }}-by-{{ fk.target_var }}-chart"), Object.entries(byLabel).sort((a,b) => b[1]-a[1]));
   }
   {% endfor %}
-  {% endif %}
 }
 
 function renderBarChart_{{ entity.var_name }}(el, pairs) {

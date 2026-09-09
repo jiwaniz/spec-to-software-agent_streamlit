@@ -133,6 +133,13 @@ def build_entity_context(spec: SpecOutput) -> list[dict]:
 _GET_ONE_PATTERN = re.compile(r"^/[a-zA-Z0-9_\-]+/\{[a-zA-Z0-9_]+\}$")
 
 
+def _normalize(path: str) -> str:
+    """Kebab-case ('/leave-requests') and snake_case ('/leave_requests') should
+    be treated as the same path when classifying endpoints -- both are common
+    REST conventions and real LLM-generated specs use either interchangeably."""
+    return path.lower().replace("-", "_")
+
+
 def classify_endpoints(spec: SpecOutput, entities_ctx: list[dict]) -> tuple[list[dict], list[dict]]:
     """
     Returns (entities_ctx with standard_ops filled in, custom_endpoints list).
@@ -146,27 +153,29 @@ def classify_endpoints(spec: SpecOutput, entities_ctx: list[dict]) -> tuple[list
         entity_ctx = entity_by_name.get(ep.entity.lower())
         table_name = entity_ctx["table_name"] if entity_ctx else None
         matched = False
+        norm_path = _normalize(ep.path)
 
         if entity_ctx is not None:
-            if ep.method == "POST" and ep.path == f"/{table_name}":
+            norm_table = _normalize(f"/{table_name}")
+            if ep.method == "POST" and norm_path == norm_table:
                 entity_ctx["has_create"] = True
                 entity_ctx["create_protected"] = ep.protected
                 entity_ctx["create_fr_ids"] = ep.fr_ids
                 matched = True
-            elif ep.method == "GET" and ep.path == f"/{table_name}":
+            elif ep.method == "GET" and norm_path == norm_table:
                 entity_ctx["has_list"] = True
                 entity_ctx["list_fr_ids"] = ep.fr_ids
                 matched = True
-            elif ep.method == "GET" and _GET_ONE_PATTERN.match(ep.path) and ep.path.startswith(f"/{table_name}/"):
+            elif ep.method == "GET" and _GET_ONE_PATTERN.match(ep.path) and norm_path.startswith(norm_table + "/"):
                 entity_ctx["has_get_one"] = True
                 entity_ctx["get_one_fr_ids"] = ep.fr_ids
                 matched = True
-            elif ep.method == "PUT" and _GET_ONE_PATTERN.match(ep.path) and ep.path.startswith(f"/{table_name}/"):
+            elif ep.method == "PUT" and _GET_ONE_PATTERN.match(ep.path) and norm_path.startswith(norm_table + "/"):
                 entity_ctx["has_update"] = True
                 entity_ctx["update_protected"] = ep.protected
                 entity_ctx["update_fr_ids"] = ep.fr_ids
                 matched = True
-            elif ep.method == "DELETE" and _GET_ONE_PATTERN.match(ep.path) and ep.path.startswith(f"/{table_name}/"):
+            elif ep.method == "DELETE" and _GET_ONE_PATTERN.match(ep.path) and norm_path.startswith(norm_table + "/"):
                 entity_ctx["has_delete"] = True
                 entity_ctx["delete_protected"] = ep.protected
                 entity_ctx["delete_fr_ids"] = ep.fr_ids
@@ -221,7 +230,7 @@ def build_template_context(spec: SpecOutput) -> dict:
     # in which tab (and whether a tab appears at all) varies per app. Keeps
     # per-app customization without LLM involvement in the frontend at all.
     entry_entities = [e for e in entities_ctx if e["has_list"]]
-    report_entities = [e for e in entities_ctx if e["has_list"] and (e["price_field"] or e["quantity_field"])]
+    report_entities = [e for e in entities_ctx if e["has_list"] and (e["price_field"] or e["quantity_field"] or e["date_field"] or e["fk_fields"])]
     alert_entities = [e for e in entities_ctx if e["quantity_field"] and e["threshold_field"]]
 
     ui_plan = [{"id": "entry", "label": "Data Entry", "type": "entry", "entities": entry_entities}]

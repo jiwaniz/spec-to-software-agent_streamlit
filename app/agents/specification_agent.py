@@ -21,6 +21,9 @@ for a small Python FastAPI + SQLite CRUD application.
 Rules:
 - Every entity needs a singular PascalCase "name" (e.g. "Product") and a
   snake_case plural "table_name" (e.g. "products").
+- EVERY entity must have a GET list endpoint (e.g. GET /products), even if it
+  doesn't need full create/update/delete -- without a list endpoint, that
+  entity can never be displayed in a table or included in any report.
 - Do NOT include an "id" field in any entity's field list — a primary key
   "id" is added automatically by the code templates. Listing it yourself
   causes the generated Create schema to wrongly require the client to

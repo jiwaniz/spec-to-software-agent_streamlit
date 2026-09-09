@@ -31,6 +31,9 @@ SUPPORTED_DOMAINS = [
 st.title("Spec-to-Software Agent")
 st.caption("Describe a small CRUD app. Supported domains: " + ", ".join(SUPPORTED_DOMAINS))
 
+if st.session_state.get("last_refine_error"):
+    st.error(f"Last refinement failed: {st.session_state.last_refine_error}")
+
 col1, col2 = st.columns([4, 1])
 with col1:
     requirement = st.text_input(
@@ -125,9 +128,11 @@ if result is not None:
                         s = correction_node(s); s = validation_node(s); cycles += 1
                     s = diagram_node(s); s = report_node(s)
                     st.session_state.result = s
+                    st.session_state.last_refine_error = None
                     reply = s.get("refinement_patch", {}).get("notes", "Updated.")
                     st.session_state.chat_history.append((refine_msg, reply))
                     st.rerun()
                 except Exception as e:
-                    st.session_state.chat_history.append((refine_msg, f"Refinement failed: {e}"))
+                    st.session_state.last_refine_error = str(e)
+                    st.session_state.chat_history.append((refine_msg, f"Failed: {e}"))
                     st.rerun()
