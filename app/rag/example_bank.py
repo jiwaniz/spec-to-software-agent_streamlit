@@ -35,6 +35,8 @@ EXAMPLE_BANK: list[SpecOutput] = [
             ]),
         ],
         endpoints=[
+            EndpointDef(method="POST", path="/categories", entity="Category", description="Create a category", fr_ids=["FR-00"]),
+            EndpointDef(method="GET", path="/categories", entity="Category", description="List categories", fr_ids=["FR-00b"]),
             EndpointDef(method="POST", path="/products", entity="Product", description="Create a product", fr_ids=["FR-01"]),
             EndpointDef(method="GET", path="/products", entity="Product", description="List all products", fr_ids=["FR-02"]),
             EndpointDef(method="GET", path="/products/{product_id}", entity="Product", description="Get one product", fr_ids=["FR-03"]),
@@ -43,6 +45,8 @@ EXAMPLE_BANK: list[SpecOutput] = [
             EndpointDef(method="GET", path="/products/low-stock", entity="Product", description="List products below their low-stock threshold", fr_ids=["FR-06"]),
         ],
         functional_requirements=[
+            _fr("FR-00", "User can create a category", "POST /categories returns 201"),
+            _fr("FR-00b", "User can list categories", "GET /categories returns 200"),
             _fr("FR-01", "User can create a product", "POST /products returns 201 with the created product"),
             _fr("FR-02", "User can list products", "GET /products returns 200 with an array of products"),
             _fr("FR-03", "User can fetch a single product", "GET /products/{id} returns 200 or 404"),
@@ -69,6 +73,8 @@ EXAMPLE_BANK: list[SpecOutput] = [
             ]),
         ],
         endpoints=[
+            EndpointDef(method="POST", path="/categories", entity="Category", description="Create a category", fr_ids=["FR-00"]),
+            EndpointDef(method="GET", path="/categories", entity="Category", description="List categories", fr_ids=["FR-00b"]),
             EndpointDef(method="POST", path="/expenses", entity="Expense", description="Create an expense", fr_ids=["FR-01"]),
             EndpointDef(method="GET", path="/expenses", entity="Expense", description="List expenses", fr_ids=["FR-02"]),
             EndpointDef(method="GET", path="/expenses/{expense_id}", entity="Expense", description="Get one expense", fr_ids=["FR-03"]),
@@ -77,6 +83,8 @@ EXAMPLE_BANK: list[SpecOutput] = [
             EndpointDef(method="GET", path="/expenses/filter", entity="Expense", description="Filter expenses by category", fr_ids=["FR-06"]),
         ],
         functional_requirements=[
+            _fr("FR-00", "User can create a category", "POST /categories returns 201"),
+            _fr("FR-00b", "User can list categories", "GET /categories returns 200"),
             _fr("FR-01", "User can create an expense", "POST /expenses returns 201"),
             _fr("FR-02", "User can list expenses", "GET /expenses returns 200 with an array"),
             _fr("FR-03", "User can fetch a single expense", "GET /expenses/{id} returns 200 or 404"),
@@ -105,6 +113,7 @@ EXAMPLE_BANK: list[SpecOutput] = [
             ]),
         ],
         endpoints=[
+            EndpointDef(method="POST", path="/employees", entity="Employee", description="Create an employee", fr_ids=["FR-00c"]),
             EndpointDef(method="GET", path="/employees", entity="Employee", description="List employees", fr_ids=["FR-00"]),
             EndpointDef(method="POST", path="/leave-requests", entity="LeaveRequest", description="Submit a leave request", fr_ids=["FR-01"]),
             EndpointDef(method="GET", path="/leave-requests", entity="LeaveRequest", description="List leave requests", fr_ids=["FR-02"]),
@@ -112,6 +121,7 @@ EXAMPLE_BANK: list[SpecOutput] = [
             EndpointDef(method="PUT", path="/leave-requests/{id}/reject", entity="LeaveRequest", description="Reject a leave request", fr_ids=["FR-04"]),
         ],
         functional_requirements=[
+            _fr("FR-00c", "User can create an employee", "POST /employees returns 201"),
             _fr("FR-00", "User can list employees", "GET /employees returns 200"),
             _fr("FR-01", "Employee can submit a leave request", "POST /leave-requests returns 201 with status='pending'"),
             _fr("FR-02", "User can list leave requests", "GET /leave-requests returns 200"),
@@ -140,6 +150,7 @@ EXAMPLE_BANK: list[SpecOutput] = [
             ]),
         ],
         endpoints=[
+            EndpointDef(method="POST", path="/courses", entity="Course", description="Create a course", fr_ids=["FR-00c"]),
             EndpointDef(method="GET", path="/courses", entity="Course", description="List courses", fr_ids=["FR-00"]),
             EndpointDef(method="POST", path="/students", entity="Student", description="Register a student", fr_ids=["FR-01"]),
             EndpointDef(method="GET", path="/students", entity="Student", description="List students", fr_ids=["FR-01b"]),
@@ -148,6 +159,7 @@ EXAMPLE_BANK: list[SpecOutput] = [
             EndpointDef(method="GET", path="/courses/{course_id}/students", entity="Enrollment", description="List students in a course", fr_ids=["FR-03"]),
         ],
         functional_requirements=[
+            _fr("FR-00c", "User can create a course", "POST /courses returns 201"),
             _fr("FR-00", "User can list courses", "GET /courses returns 200"),
             _fr("FR-01", "New student can register", "POST /students returns 201"),
             _fr("FR-01b", "User can list students", "GET /students returns 200"),

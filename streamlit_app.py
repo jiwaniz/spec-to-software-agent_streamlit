@@ -34,24 +34,61 @@ st.caption("Describe a small CRUD app. Supported domains: " + ", ".join(SUPPORTE
 if st.session_state.get("last_refine_error"):
     st.error(f"Last refinement failed: {st.session_state.last_refine_error}")
 
+from app.rag.example_bank import EXAMPLE_BANK
+
+DOMAIN_TO_SPEC = {spec.domain: spec for spec in EXAMPLE_BANK}
+APP_OPTIONS = list(DOMAIN_TO_SPEC.keys()) + ["Custom (describe below)"]
+
 col1, col2 = st.columns([4, 1])
 with col1:
-    requirement = st.text_input(
-        "Describe your app",
-        placeholder="Build an inventory API with products, categories, and low-stock alerts.",
-    )
+    app_choice = st.selectbox("Application type", APP_OPTIONS)
+    requirement = ""
+    if app_choice == "Custom (describe below)":
+        requirement = st.text_input(
+            "Describe your app",
+            placeholder="Build an inventory API with products, categories, and low-stock alerts.",
+        )
 with col2:
     auth_enabled = st.checkbox("Add JWT auth")
 
 if st.button("Generate", type="primary"):
-    if not requirement.strip():
+    if app_choice == "Custom (describe below)" and not requirement.strip():
         st.warning("Please enter a requirement.")
     else:
         with st.spinner("Generating..."):
             try:
-                result = st.session_state.graph.invoke(
-                    {"raw_requirement": requirement, "auth_enabled": auth_enabled}
-                )
+                if app_choice == "Custom (describe below)":
+                    result = st.session_state.graph.invoke(
+                        {"raw_requirement": requirement, "auth_enabled": auth_enabled}
+                    )
+                else:
+                    # Known domain: use the guaranteed-correct spec directly,
+                    # skipping Requirement/Specification LLM calls entirely
+                    # for 100% reliability. Use Refine afterward to customize
+                    # (add fields/entities like Category, Department, etc.).
+                    from app.graph_sketch import (
+                        planning_node, task_node, retrieval_node, coding_node,
+                        testing_node, validation_node, correction_node,
+                        diagram_node, report_node,
+                    )
+                    base_spec = DOMAIN_TO_SPEC[app_choice].model_copy(deep=True)
+                    base_spec.auth_enabled = auth_enabled
+                    if auth_enabled:
+                        for ep in base_spec.endpoints:
+                            if ep.method in ("POST", "PUT", "DELETE"):
+                                ep.protected = True
+                    s = {
+                        "spec": base_spec.model_dump(),
+                        "requirement": {"in_scope": True, "app_name": base_spec.app_name, "domain": base_spec.domain},
+                        "correction_cycle": 0,
+                    }
+                    s = planning_node(s); s = task_node(s); s = retrieval_node(s)
+                    s = coding_node(s); s = testing_node(s); s = validation_node(s)
+                    cycles = 0
+                    while s.get("validation", {}).get("overall_status") != "PASS" and cycles < 2:
+                        s = correction_node(s); s = validation_node(s); cycles += 1
+                    s = diagram_node(s); s = report_node(s)
+                    result = s
                 st.session_state.result = result
                 st.session_state.chat_history = []
             except Exception as e:
