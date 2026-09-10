@@ -233,9 +233,22 @@ def build_template_context(spec: SpecOutput) -> dict:
     report_entities = [e for e in entities_ctx if e["has_list"] and (e["price_field"] or e["quantity_field"] or e["date_field"] or e["fk_fields"])]
     alert_entities = [e for e in entities_ctx if e["quantity_field"] and e["threshold_field"]]
 
+    # Activity Log: entities that look like a transaction/event record --
+    # has a date + at least one FK, and nothing else references it back
+    # (i.e. it's a "leaf" entity, not a lookup table like Category).
+    referenced_classes = {fk["fk_target_class"] for e in entities_ctx for fk in e["fk_fields"]}
+    log_entities = [
+        e for e in entities_ctx
+        if e["has_list"] and e["date_field"] and e["fk_fields"] and e["class_name"] not in referenced_classes
+    ]
+
     ui_plan = [{"id": "entry", "label": "Data Entry", "type": "entry", "entities": entry_entities}]
+    if len(entry_entities) >= 2:
+        ui_plan.append({"id": "dashboard", "label": "Dashboard", "type": "dashboard", "entities": entry_entities})
     if report_entities:
         ui_plan.append({"id": "reports", "label": "Reports", "type": "reports", "entities": report_entities})
+    if log_entities:
+        ui_plan.append({"id": "activity", "label": "Activity Log", "type": "activity", "entities": log_entities})
     if alert_entities:
         ui_plan.append({"id": "alerts", "label": "Alerts", "type": "alerts", "entities": alert_entities})
     if spec.auth_enabled:

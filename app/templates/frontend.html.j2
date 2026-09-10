@@ -107,6 +107,23 @@
 </section>
 {% endfor %}
 
+{% elif tab.type == 'dashboard' %}
+<section>
+  <h2>Overview</h2>
+  <div class="stat-cards" id="dashboard-stats"></div>
+</section>
+
+{% elif tab.type == 'activity' %}
+{% for entity in tab.entities %}
+<section>
+  <h2>{{ entity.class_name }} -- Recent Activity</h2>
+  <table>
+    <thead><tr><th>id</th>{% for field in entity.fields %}<th>{{ field.name }}</th>{% endfor %}</tr></thead>
+    <tbody id="{{ entity.table_name }}-activity-body"></tbody>
+  </table>
+</section>
+{% endfor %}
+
 {% elif tab.type == 'alerts' %}
 {% for entity in tab.entities %}
 <section>
@@ -295,7 +312,38 @@ async function delete_{{ entity.var_name }}(id) {
 Promise.all([{% for entity in listable %}load_{{ entity.var_name }}(){% if not loop.last %}, {% endif %}{% endfor %}]).then(() => {
   {% for entity in listable %}render_{{ entity.var_name }}();
   {% endfor %}
+  renderDashboard();
+  renderActivityLogs();
 });
+
+function renderDashboard() {
+  const el = document.getElementById("dashboard-stats");
+  if (!el) return;
+  let cards = "";
+  {% for entity in listable %}
+  cards += '<div class="stat-card"><div class="num">' + _{{ entity.var_name }}_data.length + '</div><div class="label">{{ entity.class_name }}</div></div>';
+  {% endfor %}
+  el.innerHTML = cards;
+}
+
+function renderActivityLogs() {
+  {% for tab in ui_plan %}{% if tab.type == 'activity' %}{% for entity in tab.entities %}
+  {
+    const body = document.getElementById("{{ entity.table_name }}-activity-body");
+    if (body) {
+      const rows = [..._{{ entity.var_name }}_data].sort((a,b) => (b["{{ entity.date_field }}"]||"").localeCompare(a["{{ entity.date_field }}"]||""));
+      body.innerHTML = "";
+      rows.forEach(row => {
+        const tr = document.createElement("tr");
+        let cells = "<td>" + row.id + "</td>";
+        {% for field in entity.fields %}cells += "<td>" + (row["{{ field.name }}"] ?? "") + "</td>";{% endfor %}
+        tr.innerHTML = cells;
+        body.appendChild(tr);
+      });
+    }
+  }
+  {% endfor %}{% endif %}{% endfor %}
+}
 </script>
 </body>
 </html>
