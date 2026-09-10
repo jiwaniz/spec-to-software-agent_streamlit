@@ -104,6 +104,15 @@
   <h3 id="{{ entity.table_name }}-by-{{ fk.target_var }}-title" style="margin-top:16px; font-size:14px; color:#666;"></h3>
   <div id="{{ entity.table_name }}-by-{{ fk.target_var }}-chart"></div>
   {% endfor %}
+  {% if entity.in_field and entity.out_field %}
+  {% for fk in entity.fk_breakdowns %}
+  <h3 style="margin-top:16px; font-size:14px; color:#666;">Balance by {{ fk.target_class }}</h3>
+  <table>
+    <thead><tr><th>{{ fk.target_class }}</th><th>Total In</th><th>Total Out</th><th>Balance</th></tr></thead>
+    <tbody id="{{ entity.table_name }}-ledger-{{ fk.target_var }}-body"></tbody>
+  </table>
+  {% endfor %}
+  {% endif %}
 </section>
 {% endfor %}
 
@@ -273,6 +282,27 @@ function renderStats_{{ entity.var_name }}(all) {
     renderBarChart_{{ entity.var_name }}(document.getElementById("{{ entity.table_name }}-by-{{ fk.target_var }}-chart"), Object.entries(byLabel).sort((a,b) => b[1]-a[1]));
   }
   {% endfor %}
+
+  {% if entity.in_field and entity.out_field %}
+  {% for fk in entity.fk_breakdowns %}
+  {
+    const ledger = {};
+    all.forEach(r => {
+      const target = (_{{ fk.target_var }}_data || []).find(t => t.id === r["{{ fk.field_name }}"]);
+      const label = target ? (target["{{ fk.label_field }}"] ?? ("id " + target.id)) : "Unknown";
+      if (!ledger[label]) ledger[label] = { in: 0, out: 0 };
+      ledger[label].in += r["{{ entity.in_field }}"] || 0;
+      ledger[label].out += r["{{ entity.out_field }}"] || 0;
+    });
+    const body = document.getElementById("{{ entity.table_name }}-ledger-{{ fk.target_var }}-body");
+    if (body) {
+      body.innerHTML = Object.entries(ledger).map(([label, v]) =>
+        '<tr><td>' + label + '</td><td>' + v.in + '</td><td>' + v.out + '</td><td>' + (v.in - v.out) + '</td></tr>'
+      ).join("");
+    }
+  }
+  {% endfor %}
+  {% endif %}
 }
 
 function renderBarChart_{{ entity.var_name }}(el, pairs) {

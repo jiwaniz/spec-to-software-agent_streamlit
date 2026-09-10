@@ -56,6 +56,10 @@ def _field_role(field_name: str) -> str | None:
     return None
 
 
+def _has_token(name: str, token: str) -> bool:
+    return token in name.lower().split("_")
+
+
 def build_entity_context(spec: SpecOutput) -> list[dict]:
     entity_by_lower = build_entity_fk_map(spec.entities)
     table_by_class = {e.name: e.table_name for e in spec.entities}
@@ -105,6 +109,8 @@ def build_entity_context(spec: SpecOutput) -> list[dict]:
             "price_field": next((f["name"] for f in fields_ctx if f["role"] == "price"), None),
             "quantity_field": next((f["name"] for f in fields_ctx if f["role"] == "quantity"), None),
             "threshold_field": next((f["name"] for f in fields_ctx if f["role"] == "threshold"), None),
+            "in_field": next((f["name"] for f in fields_ctx if f["py_type"] in ("int", "float") and _has_token(f["name"], "in")), None),
+            "out_field": next((f["name"] for f in fields_ctx if f["py_type"] in ("int", "float") and _has_token(f["name"], "out")), None),
             # standard CRUD paths, precomputed as plain strings to avoid
             # Jinja2 vs FastAPI curly-brace collisions in the templates
             "create_path": f"/{entity.table_name}",
