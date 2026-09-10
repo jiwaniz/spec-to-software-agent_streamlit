@@ -125,6 +125,7 @@
 {% endfor %}
 
 {% elif tab.type == 'alerts' %}
+{% if tab.entities %}
 {% for entity in tab.entities %}
 <section>
   <h2>{{ entity.class_name }} -- Low Stock</h2>
@@ -134,6 +135,9 @@
   </table>
 </section>
 {% endfor %}
+{% else %}
+<section><p>No alert-worthy fields (e.g. quantity + reorder threshold) detected in this app's data.</p></section>
+{% endif %}
 
 {% elif tab.type == 'settings' %}
 <section>

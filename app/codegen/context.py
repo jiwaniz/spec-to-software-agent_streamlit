@@ -249,8 +249,7 @@ def build_template_context(spec: SpecOutput) -> dict:
         ui_plan.append({"id": "reports", "label": "Reports", "type": "reports", "entities": report_entities})
     if log_entities:
         ui_plan.append({"id": "activity", "label": "Activity Log", "type": "activity", "entities": log_entities})
-    if alert_entities:
-        ui_plan.append({"id": "alerts", "label": "Alerts", "type": "alerts", "entities": alert_entities})
+    ui_plan.append({"id": "alerts", "label": "Alerts", "type": "alerts", "entities": alert_entities})
     if spec.auth_enabled:
         ui_plan.append({"id": "settings", "label": "Settings", "type": "settings", "entities": []})
 
