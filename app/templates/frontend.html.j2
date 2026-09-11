@@ -327,7 +327,7 @@ document.getElementById("{{ entity.table_name }}-form").addEventListener("submit
   {% else %}payload["{{ field.name }}"] = form["{{ field.name }}"].value;{% endif %}
   {% endfor %}
   const res = await fetch("/{{ entity.table_name }}", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload) });
-  if (res.ok) { form.reset(); await load_{{ entity.var_name }}(); render_{{ entity.var_name }}(); }
+  if (res.ok) { form.reset(); await load_{{ entity.var_name }}(); render_{{ entity.var_name }}(); renderDashboard(); renderActivityLogs(); }
   else { alert("Error: " + await res.text()); }
 });
 {% endif %}
@@ -337,6 +337,8 @@ async function delete_{{ entity.var_name }}(id) {
   await fetch("/{{ entity.table_name }}/" + id, { method: "DELETE" });
   await load_{{ entity.var_name }}();
   render_{{ entity.var_name }}();
+  renderDashboard();
+  renderActivityLogs();
 }
 {% endif %}
 {% endif %}
